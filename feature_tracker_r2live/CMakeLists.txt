@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(feature_tracker)
+project(feature_tracker_r2live)
 
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11")
@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     sensor_msgs
     cv_bridge
-    camera_model
+    camera_model_r2live
     )
 
 find_package(OpenCV REQUIRED)
@@ -28,10 +28,10 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
 )
 
-add_executable(feature_tracker
+add_executable(feature_tracker_r2live
     src/feature_tracker_node.cpp
     src/parameters.cpp
     src/feature_tracker.cpp
     )
 
-target_link_libraries(feature_tracker ${catkin_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(feature_tracker_r2live ${catkin_LIBRARIES} ${OpenCV_LIBS})

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(camera_model)
+project(camera_model_r2live)
 
 set(CMAKE_BUILD_TYPE "Release")
 set(CMAKE_CXX_FLAGS "-std=c++11")
@@ -38,30 +38,30 @@ add_executable(Calibration
     src/intrinsic_calib.cc
     src/chessboard/Chessboard.cc
     src/calib/CameraCalibration.cc
-    src/camera_models/Camera.cc
-    src/camera_models/CameraFactory.cc
-    src/camera_models/CostFunctionFactory.cc
-    src/camera_models/PinholeCamera.cc
-    src/camera_models/CataCamera.cc
-    src/camera_models/EquidistantCamera.cc
-    src/camera_models/ScaramuzzaCamera.cc
+    src/camera_model/Camera.cc
+    src/camera_model/CameraFactory.cc
+    src/camera_model/CostFunctionFactory.cc
+    src/camera_model/PinholeCamera.cc
+    src/camera_model/CataCamera.cc
+    src/camera_model/EquidistantCamera.cc
+    src/camera_model/ScaramuzzaCamera.cc
     src/sparse_graph/Transform.cc
     src/gpl/gpl.cc
     src/gpl/EigenQuaternionParameterization.cc)
 
-add_library(camera_model
+add_library(camera_model_r2live
     src/chessboard/Chessboard.cc
     src/calib/CameraCalibration.cc
-    src/camera_models/Camera.cc
-    src/camera_models/CameraFactory.cc
-    src/camera_models/CostFunctionFactory.cc
-    src/camera_models/PinholeCamera.cc
-    src/camera_models/CataCamera.cc
-    src/camera_models/EquidistantCamera.cc
-    src/camera_models/ScaramuzzaCamera.cc
+    src/camera_model/Camera.cc
+    src/camera_model/CameraFactory.cc
+    src/camera_model/CostFunctionFactory.cc
+    src/camera_model/PinholeCamera.cc
+    src/camera_model/CataCamera.cc
+    src/camera_model/EquidistantCamera.cc
+    src/camera_model/ScaramuzzaCamera.cc
     src/sparse_graph/Transform.cc
     src/gpl/gpl.cc
     src/gpl/EigenQuaternionParameterization.cc)
 
 target_link_libraries(Calibration ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
-target_link_libraries(camera_model ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
+target_link_libraries(camera_model_r2live ${Boost_LIBRARIES} ${OpenCV_LIBS} ${CERES_LIBRARIES})
