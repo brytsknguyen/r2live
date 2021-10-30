@@ -147,6 +147,8 @@ public:
     Eigen::Vector3f XAxisPoint_body; //(LIDAR_SP_LEN, 0.0, 0.0);
     Eigen::Vector3f XAxisPoint_world; //(LIDAR_SP_LEN, 0.0, 0.0);
 
+    Eigen::Matrix4d T_Imu_Lidar;
+
     std::vector<BoxPointType> cub_needrm;
     std::vector<BoxPointType> cub_needad;
 
@@ -753,6 +755,17 @@ public:
             meas.lidar_beg_time = lidar_buffer.front()->header.stamp.toSec();
             lidar_end_time = meas.lidar_beg_time + meas.lidar->points.back().curvature / double(1000);
             meas.lidar_end_time = lidar_end_time;
+            
+            // Transform all features in to the imu (body) frame
+            for(auto &point : meas.lidar->points)
+            {
+                Eigen::Vector3d point_inImu(point.x, point.y, point.z);
+                point_inImu = T_Imu_Lidar.block<3, 3>(0, 0)*point_inImu + T_Imu_Lidar.block<3, 1>(0, 3);
+                point.x = point_inImu.x();
+                point.y = point_inImu.y();
+                point.z = point_inImu.z();
+            }
+
             lidar_pushed = true;
         }
 
@@ -792,6 +805,15 @@ public:
         sub_imu = nh.subscribe("/livox/imu", 2000000, &Fast_lio::imu_cbk, this, ros::TransportHints().tcpNoDelay());
         sub_pcl = nh.subscribe("/laser_cloud_flat", 2000000, &Fast_lio::feat_points_cbk, this, ros::TransportHints().tcpNoDelay());
 
+        // Find the transform from body to lidar
+        vector<double> T_Imu_Lidar_ = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1};
+
+        nh.param("fast_lio/T_Imu_Lidar", T_Imu_Lidar_, T_Imu_Lidar_);
+
+        T_Imu_Lidar = Matrix<double, 4, 4, RowMajor>(&T_Imu_Lidar_[0]);
+
+        std::cout << "T_Imu_lidar\n" << T_Imu_Lidar << endl;
+
         get_ros_parameter(nh, "fast_lio/dense_map_enable", dense_map_en, true);
         get_ros_parameter(nh, "fast_lio/lidar_time_delay", m_lidar_time_delay, 0.0);
         get_ros_parameter(nh, "fast_lio/max_iteration", NUM_MAX_ITERATIONS, 4);
@@ -814,7 +836,7 @@ public:
         laserCloudFullRes2 = boost::make_shared<PointCloudXYZI>();
         laserCloudFullResColor = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 
-        XAxisPoint_body = Eigen::Vector3f(LIDAR_SP_LEN, 0.0, 0.0);
+        XAxisPoint_body  = Eigen::Vector3f(LIDAR_SP_LEN, 0.0, 0.0);
         XAxisPoint_world = Eigen::Vector3f(LIDAR_SP_LEN, 0.0, 0.0);
 
         downSizeFilterSurf.setLeafSize(filter_size_surf_min, filter_size_surf_min, filter_size_surf_min_z);

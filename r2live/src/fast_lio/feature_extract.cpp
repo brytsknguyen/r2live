@@ -7,6 +7,32 @@
 
 using namespace std;
 
+struct EIGEN_ALIGN16 PointOuster
+{
+  PCL_ADD_POINT4D;
+  float intensity;
+  uint32_t t;
+  uint16_t reflectivity;
+  uint8_t  ring;
+  uint16_t ambient;
+  uint32_t range;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+
+// clang-format off
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointOuster,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (float, intensity, intensity)
+    // use std::uint32_t to avoid conflicting with pcl::uint32_t
+    (std::uint32_t, t, t)
+    (std::uint16_t, reflectivity, reflectivity)
+    (std::uint8_t,  ring, ring)
+    (std::uint16_t, ambient, ambient)
+    (std::uint32_t, range, range)
+)
+
 #define IS_VALID(a)  ((abs(a)>1e8) ? true : false)
 
 typedef pcl::PointXYZINormal PointType;
@@ -233,6 +259,9 @@ void horizon_handler(const livox_ros_driver::CustomMsg::ConstPtr &msg)
   pub_func(pl_surf, pub_surf, msg->header.stamp);
   pub_func(pl_corn, pub_corn, msg->header.stamp);
   std::cout<<"[~~~~~~~~~~~~ Feature Extract ]: time: "<< omp_get_wtime() - t1<<" "<<msg->header.stamp.toSec()<<std::endl;
+
+  printf("pl_full: %d, pl_surf: %d, pl_corn: %d\n",
+          pl_full.size(), pl_surf.size(), pl_corn.size());
 }
 
 int orders[16] = {0, 2, 4, 6, 8, 10, 12, 14, 1, 3, 5, 7, 9, 11, 13, 15};
@@ -448,9 +477,9 @@ void velo16_handler1(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
 void oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
-  pcl::PointCloud<PointType> pl_orig;
+  pcl::PointCloud<PointOuster> pl_orig;
   pcl::fromROSMsg(*msg, pl_orig);
-  
+
   vector<pcl::PointCloud<PointType>> pl_buff(N_SCANS);
   vector<vector<orgtype>> typess(N_SCANS);
   pcl::PointCloud<PointType> pl_corn, pl_surf;
@@ -463,12 +492,16 @@ void oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     pl_buff[i].reserve(plsize);
   }
 
-  for(uint i=0; i<plsize; i+=N_SCANS)
+  for(uint i=0; i<plsize; i++)
   {
-    for(int j=0; j<N_SCANS; j++)
-    {
-      pl_buff[j].push_back(pl_orig[i+j]);
-    }
+    PointType point;
+    point.x = pl_orig.points[i].x;
+    point.y = pl_orig.points[i].y;
+    point.z = pl_orig.points[i].z;
+    point.intensity = pl_orig.points[i].intensity;
+    point.curvature = pl_orig.points[i].t / 1.0e6;
+
+    pl_buff[pl_orig.points[i].ring].push_back(point);
   }
 
   for(int j=0; j<N_SCANS; j++)
@@ -488,13 +521,17 @@ void oust64_handler(const sensor_msgs::PointCloud2::ConstPtr &msg)
     give_feature(pl, types, pl_corn, pl_surf);
   }
 
-  pub_func(pl_orig, pub_full, msg->header.stamp);
+  // pub_func(pl_orig, pub_full, msg->header.stamp);
   pub_func(pl_surf, pub_surf, msg->header.stamp);
   pub_func(pl_corn, pub_corn, msg->header.stamp);
+
+  // printf("pl_orig: %d, pl_surf: %d, pl_corn: %d\n",
+  //         pl_orig.size(), pl_surf.size(), pl_corn.size());
 }
 
 
-void give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &types, pcl::PointCloud<PointType> &pl_corn, pcl::PointCloud<PointType> &pl_surf)
+void give_feature(pcl::PointCloud<PointType> &pl, vector<orgtype> &types,
+                  pcl::PointCloud<PointType> &pl_corn, pcl::PointCloud<PointType> &pl_surf)
 {
   uint plsize = pl.size();
   uint plsize2;
